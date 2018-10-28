@@ -24,7 +24,6 @@ o1_to_bin() {
 	oct="$1"	# positional params can't be reassigned
 	idx=1 		# digit index (o_{1,2,3})
 	while test "$oct"; do
-		#dig=${oct%${oct#?}}
 		dig=`popc $oct`
 		test $idx -eq 1 || echo -n "$(($dig >> 2 & 0x1))" # skip msb of o1
 		echo -n "$(($dig >> 1 & 0x1))"
@@ -41,12 +40,11 @@ bytes=${bytes##[\n\t ]}		# trim
 bitpool=""			# leftover bits from last 6-bit word construction
 words=""			# Values in the range [0-63], encoded in binary
 while test ${#bytes} -gt 0 -o "$bitpool"; do
-	# construct a 6-bit word, output
-	#octetBits=$(o1_to_bin $byte)
 	octetBits=""
 	word=0
 	idx=0
 
+	# construct a 6-bit word
 	while test $idx -lt 6; do
 		if test "$bitpool"; then
 			# empty out pool
@@ -54,7 +52,6 @@ while test ${#bytes} -gt 0 -o "$bitpool"; do
 			bitpool=${bitpool#[ \t\n]}	# remove blank if any
 			bitpool=${bitpool#[01]}		# shift
 			word=$((word << 1 | $pBit))
-			# echo "POOL.pop() $pBit, W=$word, POOL='$bitpool'"
 		elif test "$octetBits" -o ${#bytes} -gt 0; then
 			if test -z "${octetBits}"; then
 				octetBits=`popo $bytes`		# extract octet
@@ -66,7 +63,6 @@ while test ${#bytes} -gt 0 -o "$bitpool"; do
 			octetBits=${octetBits#[ \t\n]}
 			octetBits=${octetBits#[01]}
 			word=$((word << 1 | $pBit))
-			# echo "OCTET.pop(): $pBit, W=$word, OCTET='$octetBits'"
 		else
 			# no more bits, append with zeroes to form a 6-bit word
 			word=$((word << 1))
@@ -75,10 +71,15 @@ while test ${#bytes} -gt 0 -o "$bitpool"; do
 	done
 
 	bitpool="$bitpool$octetBits"		# save leftovers
-	words="$words\\`printf %o $word`"
+	words="$words\\`printf %o $word`"	# save word
 done
 
-words=`echo -n $words | tr "\0\01\02\03\04\05\06\07\010\011\012\013\014\015\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037\040\041\042\043\044\045\046\047\050\051\052\053\054\055\056\057\060\061\062\063\064\065\066\067\070\071\072\073\074\075\076\077" "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"`
+words=`echo -n $words | tr "\
+\0\01\02\03\04\05\06\07\010\011\012\013\014\015\016\017\020\
+\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037\040\
+\041\042\043\044\045\046\047\050\051\052\053\054\055\056\057\060\
+\061\062\063\064\065\066\067\070\071\072\073\074\075\076\077" \
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"`
 
 # Add any padding words
 while test $((${#words} % 4)) -ne 0; do
