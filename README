@@ -1,0 +1,4 @@
+base64 implementation in POSIX-compliant shell command language.
+Dependencies: standard printf(1), od(1) and tr(1) utilities.
+
+Purposefully avoids using more sophisticated tools such as awk or bc since they may not be present in all environments.
